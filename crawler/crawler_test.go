@@ -69,8 +69,8 @@ func Test_processor_walk(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := New(clientMock{}, &workerMock{})
-			got, err := p.walk(tt.args.urls)
+			p := New(&workerMock{})
+			got, err := p.Walk(tt.args.urls)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("walk() error = %v, wantErr %v", err, tt.wantErr)
 				return
