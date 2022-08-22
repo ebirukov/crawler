@@ -28,7 +28,7 @@ func generateURLs(n int) []URL {
 
 func BenchmarkWorker(b *testing.B) {
 
-	pool := NewWorker(MockWorkFn, 100, 0)
+	pool := NewWorker(MockWorkFn, 100, 0, time.Second)
 	pool.logger = nil
 	urls := generateURLs(100)
 	var o Result

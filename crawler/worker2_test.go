@@ -1,37 +1,15 @@
 package crawler
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func mockWorkFn(execTime time.Duration) WorkerFunc {
-	return func(ctx context.Context, url URL) Result {
-		select {
-		case <-time.After(execTime):
-			return ResultOK
-		case <-ctx.Done():
-			return ResultCANCEL
-		}
-	}
-}
-
-type metricMock struct{}
-
-func (m metricMock) IncProcessed() {}
-
-func (m metricMock) IncSkipped(cnt int) {}
-
-func (m metricMock) IncSubmitted() {}
-
-func (m metricMock) IncRequestTimeout() {}
-
-func Test_PoolShutdown(t *testing.T) {
+func Test_PoolV2Shutdown(t *testing.T) {
 	actual := make([]Result, 0)
-	pool := NewWorker(mockWorkFn(100*time.Millisecond), 0, 0, 500*time.Millisecond)
+	pool := NewWorkerV2(mockWorkFn(100*time.Millisecond), 0, 0, 500*time.Millisecond, metricMock{})
 	out := pool.SubmitTasks([]URL{"https://example.com", "https://google.com"})
 	pool.Shutdown()
 	assert.Eventuallyf(t, func() bool {
@@ -44,7 +22,7 @@ func Test_PoolShutdown(t *testing.T) {
 	assert.Equal(t, []Result{}, actual, "task results")
 }
 
-func Test_PoolSubmitTasks(t *testing.T) {
+func Test_PoolV2SubmitTasks(t *testing.T) {
 
 	type args struct {
 		execTime time.Duration
@@ -100,7 +78,7 @@ func Test_PoolSubmitTasks(t *testing.T) {
 				urls:     []URL{"https://yandex.ru", "https://google.com", "https://example.com"},
 				poolSize: 1,
 			},
-			want: []Result{ResultOK},
+			want: []Result{ResultOK, ResultCANCEL},
 		},
 		{
 			name: "сработал таймаут ожидания",
@@ -110,7 +88,7 @@ func Test_PoolSubmitTasks(t *testing.T) {
 				urls:     []URL{"https://yandex.ru", "https://google.com"},
 				poolSize: 4,
 			},
-			want: []Result{},
+			want: []Result{ResultCANCEL, ResultCANCEL},
 		},
 	}
 
@@ -119,7 +97,7 @@ func Test_PoolSubmitTasks(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual := make([]Result, 0)
-			pool := NewWorker(mockWorkFn(tt.args.execTime), tt.args.poolSize, tt.args.timeout, 100*time.Millisecond)
+			pool := NewWorkerV2(mockWorkFn(tt.args.execTime), tt.args.poolSize, tt.args.timeout, 100*time.Millisecond, metricMock{})
 			out := pool.SubmitTasks(tt.args.urls)
 			assert.Eventuallyf(t, func() bool {
 				if r, ok := <-out; ok {

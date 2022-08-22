@@ -72,14 +72,6 @@ func TestResult_content(t *testing.T) {
 	}
 }
 
-var body = []byte(`<html>
-    <body>
-        <h1>Main title</h1>
-        <a href="https://code-maven.com/">Code Maven</a>
-        <h2 id="subtitle" class="important">Some subtle title</h2>
-    </body>
-    </html>`)
-
 func Test_httpClient_Request(t *testing.T) {
 	testDummy := func(w http.ResponseWriter, r *http.Request) {
 		param := r.FormValue("p")
@@ -97,6 +89,7 @@ func Test_httpClient_Request(t *testing.T) {
 	}
 	ts := httptest.NewServer(http.HandlerFunc(testDummy))
 
+	canceledCtx, _ := context.WithDeadline(context.Background(), time.Now())
 	type fields struct {
 		client http.Client
 	}
@@ -147,11 +140,23 @@ func Test_httpClient_Request(t *testing.T) {
 			want:    ResultFAIL,
 			wantErr: assert.NoError,
 		},
+		{
+			name: "cancel request",
+			fields: fields{
+				http.Client{},
+			},
+			args: args{
+				ctx: canceledCtx,
+				url: URL(fmt.Sprintf("%s?p=%s", ts.URL, "5xx")),
+			},
+			want:    ResultCANCEL,
+			wantErr: assert.NoError,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := WorkerHandler(tt.fields.client)
+			handler := WorkerHandler(tt.fields.client, metricMock{})
 			got := handler(tt.args.ctx, tt.args.url)
 			assert.Equalf(t, tt.want, got, "handler(%v, %v)", tt.args.ctx, tt.args.url)
 		})

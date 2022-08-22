@@ -1,6 +1,9 @@
 package log
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Logger interface {
 	Log(message string)
@@ -9,7 +12,7 @@ type Logger interface {
 type Adapter func(message string)
 
 func (l Adapter) Log(message string) {
-	l(message)
+	l(fmt.Sprintf("%v: %s", time.Now(), message))
 }
 
 func Printer(message string) {

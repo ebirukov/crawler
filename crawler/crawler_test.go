@@ -1,8 +1,6 @@
 package crawler
 
 import (
-	"context"
-	"net/http"
 	"reflect"
 	"testing"
 )
@@ -22,15 +20,7 @@ func (p *workerMock) SubmitTasks(urls []URL) <-chan Result {
 	return out
 }
 
-type clientMock struct {
-	http.Client
-}
-
-func (m clientMock) Request(ctx context.Context, url URL) (Result, error) {
-	return ResultOK, nil
-}
-
-func Test_processor_walk(t *testing.T) {
+func _Test_processor_walk(t *testing.T) {
 	type args struct {
 		urls []URL
 	}
