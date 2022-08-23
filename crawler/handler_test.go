@@ -156,7 +156,7 @@ func Test_httpClient_Request(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := WorkerHandler(tt.fields.client, metricMock{})
+			handler := WorkerHandler(tt.fields.client, MetricMock{})
 			got := handler(tt.args.ctx, tt.args.url)
 			assert.Equalf(t, tt.want, got, "handler(%v, %v)", tt.args.ctx, tt.args.url)
 		})

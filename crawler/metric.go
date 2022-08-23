@@ -9,12 +9,13 @@ import (
 )
 
 type metrics struct {
-	proc     uint64
-	skip     uint64
-	submit   uint64
-	rtimeout uint64
-	ticker   *time.Ticker
-	logger   log.Logger
+	proc      uint64
+	skip      uint64
+	submit    uint64
+	rtimeout  uint64
+	duplicate uint64
+	ticker    *time.Ticker
+	logger    log.Logger
 }
 
 func NewMetrics(logger log.Logger) *metrics {
@@ -53,6 +54,13 @@ func (m *metrics) IncRequestTimeout() {
 	atomic.AddUint64(&m.rtimeout, 1)
 }
 
+func (m *metrics) IncDuplicate() {
+	atomic.AddUint64(&m.duplicate, 1)
+}
+
 func (m *metrics) Print() {
-	m.logger.Log(fmt.Sprintf("requests with timeout: %d \n submitted: %d \n processed: %d \n skipped: %d \n", m.rtimeout, m.submit, m.proc, m.skip))
+	m.logger.Log(
+		fmt.Sprintf("duplicated urls: %d \n requests with timeout: %d \n submitted: %d \n processed: %d \n skipped: %d \n",
+			m.duplicate, m.rtimeout, m.submit, m.proc, m.skip),
+	)
 }

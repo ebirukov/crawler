@@ -12,13 +12,6 @@ import (
 
 type WorkerFunc func(ctx context.Context, url URL) Result
 
-type Metrics interface {
-	IncProcessed()
-	IncSkipped(cnt int)
-	IncSubmitted()
-	IncRequestTimeout()
-}
-
 type WaitTask struct {
 	id string
 	*sync.WaitGroup

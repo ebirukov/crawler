@@ -19,16 +19,6 @@ func mockWorkFn(execTime time.Duration) WorkerFunc {
 	}
 }
 
-type metricMock struct{}
-
-func (m metricMock) IncProcessed() {}
-
-func (m metricMock) IncSkipped(cnt int) {}
-
-func (m metricMock) IncSubmitted() {}
-
-func (m metricMock) IncRequestTimeout() {}
-
 func Test_PoolShutdown(t *testing.T) {
 	actual := make([]Result, 0)
 	pool := NewWorker(mockWorkFn(100*time.Millisecond), 0, 0, 500*time.Millisecond)

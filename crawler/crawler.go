@@ -5,12 +5,16 @@ import (
 	"io"
 	_ "net/http/pprof"
 	"net/url"
+	"time"
 
+	"github.com/bits-and-blooms/bloom/v3"
 	"golang.org/x/net/html"
 )
 
 type processor struct {
-	worker Worker
+	worker  Worker
+	metrics Metrics
+	stopped bool
 }
 
 type Worker interface {
@@ -18,28 +22,46 @@ type Worker interface {
 	SubmitTasks(urls []URL) <-chan Result
 }
 
-func New(worker Worker) *processor {
-	return &processor{worker: worker}
+type Metrics interface {
+	IncProcessed()
+	IncSkipped(cnt int)
+	IncSubmitted()
+	IncRequestTimeout()
+	IncDuplicate()
+}
+
+func New(worker Worker, metrics Metrics) *processor {
+	p := &processor{worker: worker, metrics: metrics}
+	time.AfterFunc(2*time.Minute, func() {
+		p.stopped = true
+	})
+	return p
 }
 
 func (p *processor) Walk(urls []URL) (int, error) {
-
+	bFilter := bloom.NewWithEstimates(10000000, 0.0001)
 	//parsedUrls := make([]string, 0)
 	out := p.worker.SubmitTasks(urls)
 	for r := range out {
 		r := r
 		go func() {
 			pu := ExtractLinks(r.Body)
-			if len(pu) > 5 {
-				pu = pu[:5]
-			}
 			urls := make([]URL, len(pu))
 			for i, url := range pu {
+				if bFilter.Test([]byte(url)) {
+					p.metrics.IncDuplicate()
+					continue
+				}
+				bFilter.Add([]byte(url))
 				urls[i] = URL(url)
 			}
-			p.worker.SubmitTasks(urls)
+			if !p.stopped {
+				p.worker.SubmitTasks(urls)
+			}
 		}()
 	}
+	actualFpRate := bloom.EstimateFalsePositiveRate(bFilter.Cap(), bFilter.K(), 10000000)
+	println(actualFpRate)
 	return 0, nil
 }
 

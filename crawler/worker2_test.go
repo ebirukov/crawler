@@ -9,7 +9,7 @@ import (
 
 func Test_PoolV2Shutdown(t *testing.T) {
 	actual := make([]Result, 0)
-	pool := NewWorkerV2(mockWorkFn(100*time.Millisecond), 0, 0, 500*time.Millisecond, metricMock{})
+	pool := NewWorkerV2(mockWorkFn(100*time.Millisecond), 0, 0, 500*time.Millisecond, MetricMock{})
 	out := pool.SubmitTasks([]URL{"https://example.com", "https://google.com"})
 	pool.Shutdown()
 	assert.Eventuallyf(t, func() bool {
@@ -97,7 +97,7 @@ func Test_PoolV2SubmitTasks(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual := make([]Result, 0)
-			pool := NewWorkerV2(mockWorkFn(tt.args.execTime), tt.args.poolSize, tt.args.timeout, 100*time.Millisecond, metricMock{})
+			pool := NewWorkerV2(mockWorkFn(tt.args.execTime), tt.args.poolSize, tt.args.timeout, 100*time.Millisecond, MetricMock{})
 			out := pool.SubmitTasks(tt.args.urls)
 			assert.Eventuallyf(t, func() bool {
 				if r, ok := <-out; ok {
